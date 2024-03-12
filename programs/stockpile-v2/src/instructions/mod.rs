@@ -2,8 +2,6 @@ pub mod add_project;
 pub mod close_milestone;
 pub mod close_project;
 pub mod contribute;
-pub mod contribute_milestone;
-pub mod contribute_milestone_with_vote;
 pub mod contribute_with_vote;
 pub mod create_milestone;
 pub mod create_pool;
@@ -18,14 +16,14 @@ pub mod claim_payout;
 pub mod withdraw_funds_from_round;
 pub mod update_project;
 pub mod extend_pool_duration;
+pub mod extend_pool_start;
 pub mod update_pool;
+pub mod realloc_pool;
 
 pub use add_project::*;
 pub use close_milestone::*;
 pub use close_project::*;
 pub use contribute::*;
-pub use contribute_milestone::*; // Instruction not currently exposed
-pub use contribute_milestone_with_vote::*; // Instruction not currently exposed
 pub use contribute_with_vote::*;
 pub use create_milestone::*; 
 pub use create_pool::*;
@@ -41,3 +39,5 @@ pub use withdraw_funds_from_round::*;
 pub use update_project::*;
 pub use update_pool::*;
 pub use extend_pool_duration::*;
+pub use extend_pool_start::*;
+pub use realloc_pool::*;
