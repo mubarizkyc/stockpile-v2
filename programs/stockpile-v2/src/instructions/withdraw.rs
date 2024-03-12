@@ -34,7 +34,7 @@ pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         amount,
     )?;
 
-    project.balance -= amount;
+    //project.balance -= amount;
 
     Ok(())
 }

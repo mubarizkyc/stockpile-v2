@@ -18,8 +18,10 @@ use crate::util::{
 // Makes a contribution to a fundraiser that is
 // currently participating in a pool. Requires
 // that the fundraiser has invoked the "join_pool"
-// instruction, and is actively participating. Also
-// requires the payer have a valid Civic pass.
+// instruction, and is actively participating.
+// ------- REQUIRES ONE OF TWO CRITERIA ---------
+// 1. Caller holds a valid Civic Pass
+// 2. Caller is verified via the relayer
 pub fn contribute_with_vote(
     ctx: Context<ContributeWithVote>,
     _pool_id: u64,
@@ -27,8 +29,8 @@ pub fn contribute_with_vote(
     amount: u64,
 ) -> Result<()> {
     // Define verification options
-    let gatekeeper_network = ctx.accounts.gatekeeper_network.key();
     let payer = ctx.accounts.payer.key();
+    let project = &mut ctx.accounts.project;
 
     // Check to make sure the token is supported
     mint_is_supported(&ctx.accounts.mint.key())?;
@@ -36,25 +38,29 @@ pub fn contribute_with_vote(
     // Check to make sure the pool is not closed
     ctx.accounts.pool.is_active()?;
 
-    // Perform Civic pass verification
-    Gateway::verify_gateway_token_account_info(
-        &ctx.accounts.gateway_token_account.to_account_info(), 
-        &ctx.accounts.payer.key(), 
-        &gatekeeper_network,
-        None,
-    ).map_err(|_e| {
-        msg!("Gateway token verification failed.");
-        ProtocolError::CivicFailure
-    });
+    // Perform Civic pass verification if no optional account
+    if ctx.accounts.relayer.is_none() {
+        let gatekeeper_network = ctx.accounts.gatekeeper_network.clone().unwrap();
+
+        Gateway::verify_gateway_token_account_info(
+            &ctx.accounts.gateway_token_account.clone().unwrap(), 
+            &ctx.accounts.payer.key(), 
+            &gatekeeper_network.key(),
+            None,
+        ).map_err(|_e| {
+            msg!("Gateway token verification failed.");
+            ProtocolError::CivicFailure
+        })?;
+    }
 
     // Add the project to the shares, if it doesn't exist
-    let project_key = ctx.accounts.project.key();
+    let project_key = &project.key();
     let mut pool_data = ctx.accounts.pool.clone().into_inner();
 
     // Iterate through the Participants, and 
     // check if the project exists in the pool
     // If not: break function and return error
-    if let Some(participant) = pool_data.project_shares.iter_mut().find(|p| p.project_key == project_key) {
+    if let Some(participant) = pool_data.project_shares.iter_mut().find(|p| p.project_key == *project_key) {
         let vote_ticket = VoteTicket::new(
             payer, 
             Some(ctx.accounts.mint.key()), 
@@ -91,15 +97,15 @@ pub fn contribute_with_vote(
         amount,
     )?;
 
-    // Increment fields
-    ctx.accounts.project.raised += amount;
-    ctx.accounts.project.balance += amount;
-    ctx.accounts.project.contributors += 1;
-
     // Update the QF algorithm
     ctx.accounts.pool.update_shares(
         ctx.accounts.pyth_usdc_usd.to_account_info(),
     )?;
+
+    // Increment fields
+    project.raised += amount;
+    project.balance += amount;
+    project.contributors += 1;
 
     Ok(())
 }
@@ -127,6 +133,7 @@ pub struct ContributeWithVote<'info> {
     )]
     pub pool: Box<Account<'info, Pool>>,
     #[account( 
+        mut,
         seeds = [
             Project::SEED_PREFIX.as_bytes(),
             project_id.to_le_bytes().as_ref(),
@@ -148,11 +155,12 @@ pub struct ContributeWithVote<'info> {
     )]
     pub payer_token_account: Account<'info, token::TokenAccount>,
     /// CHECK: This is not unsafe because this account isn't written to
-    pub gateway_token_account: AccountInfo<'info>,
+    pub gateway_token_account: Option<AccountInfo<'info>>,
     /// CHECK: This is not unsafe because this account isn't written to
-    pub gatekeeper_network: AccountInfo<'info>,
+    pub gatekeeper_network: Option<AccountInfo<'info>>,
     #[account(mut)]
     pub payer: Signer<'info>,
+    pub relayer: Option<Signer<'info>>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, token::Token>,
     pub associated_token_program: Program<'info, associated_token::AssociatedToken>,

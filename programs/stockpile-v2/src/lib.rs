@@ -46,7 +46,7 @@ use solana_security_txt::security_txt;
 security_txt! {
     name: "Stockpile V2",
     project_url: "http://stockpile.so",
-    contacts: "email:info@stockpile.so,discord:0xsavant",
+    contacts: "email:joey@stockpile.so,discord:0xsavant",
     policy: "https://github.com/StockpileLabs/stockpile-v2/blob/master/SECURITY.md",
     preferred_languages: "en",
     source_code: "https://github.com/StockpileLabs/stockpile-v2"
@@ -208,5 +208,20 @@ pub mod stockpile_v2 {
         new_end_date: u64,
     ) -> Result<()> {
         instructions::extend_pool_duration(ctx, _pool_id, new_end_date)
+    }
+
+    pub fn extend_pool_start(
+        ctx: Context<ExtendPoolStart>,
+        _pool_id: u64,
+        new_start_date: u64,
+    ) -> Result<()> {
+        instructions::extend_pool_start(ctx, _pool_id, new_start_date)
+    }
+
+    pub fn realloc_pool(
+        ctx: Context<ReallocPool>,
+        _pool_id: u64,
+    ) -> Result<()> {
+        instructions::realloc_pool(ctx, _pool_id)
     }
 }

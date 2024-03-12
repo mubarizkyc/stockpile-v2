@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use pyth_sdk_solana::load_price_feed_from_account_info;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     error::ProtocolError,
@@ -173,14 +173,12 @@ impl Pool {
         // Get the current prices for each mint in USD
         let usdc_usd_price = try_load_price(pyth_usdc_usd)?;
 
-        msg!("USDC/USD Price: {:?}", usdc_usd_price);
-
         let (vote_count, sum_of_squared_votes_all_projects) = {
             // Block-scope the mutability
 
-            // Set up a `BTreeMap` to use to record each project's squared sum of
+            // Set up a `HashMap` to use to record each project's squared sum of
             // square roots of votes
-            let mut vote_count_mut: BTreeMap<Pubkey, f64> = BTreeMap::new();
+            let mut vote_count_mut: HashMap<Pubkey, f64> = HashMap::new();
             let mut sum_of_squared_votes_all_projects_mut: f64 = 0.0;
 
             // Iterate through all of the projects
@@ -196,7 +194,7 @@ impl Pool {
                 // Square the sum of all square roots of each vote
                 let sum_of_roots_squared = total_square_root_votes_usd.powi(2);
 
-                msg!("Sum of square roots squared: {:?}", sum_of_roots_squared);
+                msg!("Sum of roots squared: {:?}", sum_of_roots_squared);
 
                 // Add to the vote count `BTreeMap`
                 vote_count_mut.insert(project.project_key, sum_of_roots_squared);

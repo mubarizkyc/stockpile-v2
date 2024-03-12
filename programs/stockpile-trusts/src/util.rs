@@ -2,19 +2,16 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use std::str::FromStr;
 
-use crate::error::ProtocolError;
+use crate::error::VaultError;
 
 pub const MAX_NAME_LEN: usize = 100;
 pub const MAX_ADMIN_LEN: usize = 4;
 
+pub const STOCKPILE_PROGRAM_ID: &str = "STKUaKniasuqrfer3XNbmrrc578pkL1XACdK8H3YPu8";
+pub const KAMINO_PROGRAM_ID: &str = "KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD";
+
 pub const USDC_MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 pub const USDC_DEVNET_MINT: &str = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-
-pub const SOL_USD_PRICE_FEED_ID: &str = "ALP8SdU9oARYVLgLR7LrqMNCYBnhtnQz1cj6bwgwQmgj";
-// THIS IS MAINNET
-pub const USDC_USD_PRICE_FEED_ID: &str = "Gnt27xtC473ZT2Mw5u8wZ68Z3gULkSTb5DuxJy7eJotD";
-//THIS IS DEVNET
-//pub const USDC_USD_PRICE_FEED_ID: &str = "5SSkXsEKQepHHAewytPVwdej4epN1nxgLVM84L4KXgy7";
 
 pub const SUPPORTED_SPL_MINTS: [&'static str; 2] = [USDC_MINT, USDC_DEVNET_MINT];
 
@@ -28,7 +25,7 @@ pub fn mint_is_supported(mint_pubkey: &Pubkey) -> Result<()> {
             return Ok(());
         }
     }
-    Err(ProtocolError::MintNotSupported.into())
+    Err(VaultError::MintNotSupported.into())
 }
 
 pub fn set_and_maybe_realloc<'info, T>(
@@ -68,6 +65,24 @@ where
         // Serialize new data
         account_info.realloc(new_account_size, false)?;
     }
-    //account.set_inner(new_data);
+    account.set_inner(new_data.clone());
     Ok(())
+}
+
+#[derive(Clone)]
+pub struct KLend;
+
+impl anchor_lang::Id for KLend {
+    fn id() -> Pubkey {
+        Pubkey::from_str(KAMINO_PROGRAM_ID).unwrap()
+    }
+}
+
+#[derive(Clone)]
+pub struct Stockpile;
+
+impl anchor_lang::Id for Stockpile {
+    fn id() -> Pubkey {
+        Pubkey::from_str(STOCKPILE_PROGRAM_ID).unwrap()
+    }
 }
