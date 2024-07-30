@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{Protocols, Intervals, YieldVault};
+use crate::{Intervals, Protocols, YieldVault};
 
 pub fn init(
     ctx: Context<InitializeVault>,
@@ -11,19 +11,15 @@ pub fn init(
     projects: Vec<Pubkey>,
     mint: Pubkey,
 ) -> Result<()> {
-    ctx.accounts.vault.set_inner(
-            YieldVault::new(
-                protocol,
-                interval,
-                initial_amount,
-                _vault_id,
-                projects,
-                mint,
-                *ctx.bumps
-                    .get("project")
-                    .expect("Failed to derive bump for `project`"),
-            )?
-        );
+    ctx.accounts.vault.set_inner(YieldVault::new(
+        protocol,
+        interval,
+        initial_amount,
+        _vault_id,
+        projects,
+        mint,
+        ctx.bumps.vault,
+    )?);
     Ok(())
 }
 

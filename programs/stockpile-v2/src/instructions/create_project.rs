@@ -25,9 +25,8 @@ pub fn create_project(
                 admins,
                 goal,
                 beneficiary,
-                *ctx.bumps
-                    .get("project")
-                    .expect("Failed to derive bump for `project`"),
+                ctx.bumps
+                   .project
             )?
         );
     } else {
@@ -38,9 +37,8 @@ pub fn create_project(
                 admins,
                 goal,
                 beneficiary,
-                *ctx.bumps
-                    .get("project")
-                    .expect("Failed to derive bump for `project`"),
+                ctx.bumps
+                   .project
             )?
         );
     }

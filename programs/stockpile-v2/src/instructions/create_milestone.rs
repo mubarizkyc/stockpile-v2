@@ -23,9 +23,8 @@ pub fn create_milestone(
                 name,
                 percentage,
                 project.key(),
-                *ctx.bumps
-                    .get("milestone")
-                    .expect("Failed to derive bump for `project`"),
+                ctx.bumps
+                   .milestone
             )?
         );
     } else {

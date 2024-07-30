@@ -20,9 +20,8 @@ pub fn create_pool(
             end,
             admins,
             access,
-            *ctx.bumps
-                .get("pool")
-                .expect("Failed to derive bump for `pool`"),
+            ctx.bumps
+                .pool
         )?
     );
     Ok(())

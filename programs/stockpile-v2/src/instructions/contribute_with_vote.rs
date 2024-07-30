@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{token, associated_token};
+use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::token::Token;
 
 use solana_gateway::Gateway;
 

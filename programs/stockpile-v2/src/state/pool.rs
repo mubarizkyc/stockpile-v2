@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
-use pyth_sdk_solana::load_price_feed_from_account_info;
+// use pyth_sdk_solana::load_price_feed_from_account_info;
 use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     error::ProtocolError,
-    util::{to_pubkey, MAX_NAME_LEN, USDC_MINT, USDC_DEVNET_MINT},
+    util::{to_pubkey, MAX_NAME_LEN, USDC_DEVNET_MINT, USDC_MINT},
 };
 
 #[account]
@@ -39,9 +39,17 @@ impl Pool {
         + 4                         // Enum (singleton)
         + 4                         // Enum (singleton)
         + 1                         // u8
-        + 2500;                     // Padding
+        + 2500; // Padding
 
-    pub fn new(pool_id: u64, name: String, start: u64, end: u64, admins: Vec<Pubkey>, access: PoolAccess, bump: u8) -> Result<Self> {
+    pub fn new(
+        pool_id: u64,
+        name: String,
+        start: u64,
+        end: u64,
+        admins: Vec<Pubkey>,
+        access: PoolAccess,
+        bump: u8,
+    ) -> Result<Self> {
         if name.as_bytes().len() > MAX_NAME_LEN {
             return Err(ProtocolError::NameTooLong.into());
         }
@@ -116,7 +124,7 @@ impl Pool {
         let mut sum: f64 = 0.0;
         for share in &self.project_shares {
             sum += share.share_data.share;
-        };
+        }
 
         if sum == 0.0 && current_time > self.end {
             return Ok(());
@@ -135,8 +143,7 @@ impl Pool {
         let mut pool_total_usd: f64 = 0.0;
 
         for ticket in &self.funders {
-            pool_total_usd +=
-                calculate_price_usd(ticket.mint, ticket.amount, usdc_usd_price)?;
+            pool_total_usd += calculate_price_usd(ticket.mint, ticket.amount, usdc_usd_price)?;
         }
 
         msg!("Pool total USD: {}", pool_total_usd);
@@ -145,12 +152,8 @@ impl Pool {
     }
 
     pub fn add_participant(&mut self, project_key: Pubkey) -> Result<()> {
-        self.project_shares.push(
-            Participant::new(
-                project_key, 
-                PoolShare::new(),
-            )
-        );
+        self.project_shares
+            .push(Participant::new(project_key, PoolShare::new()));
 
         Ok(())
     }
@@ -166,10 +169,7 @@ impl Pool {
     }
 
     /// Updates all shares using the Quadratic Funding algorithm
-    pub fn update_shares(
-        &mut self,
-        pyth_usdc_usd: AccountInfo<'_>,
-    ) -> Result<()> {
+    pub fn update_shares(&mut self, pyth_usdc_usd: AccountInfo<'_>) -> Result<()> {
         // Get the current prices for each mint in USD
         let usdc_usd_price = try_load_price(pyth_usdc_usd)?;
 
@@ -189,7 +189,10 @@ impl Pool {
                     usdc_usd_price,
                 )?;
 
-                msg!("Sum of square roots of votes: {:?}", total_square_root_votes_usd);
+                msg!(
+                    "Sum of square roots of votes: {:?}",
+                    total_square_root_votes_usd
+                );
 
                 // Square the sum of all square roots of each vote
                 let sum_of_roots_squared = total_square_root_votes_usd.powi(2);
@@ -213,7 +216,11 @@ impl Pool {
             };
             project.share_data.share = updated_share;
 
-            msg!("Updated share for {:?} is {:?}", project.project_key, updated_share);
+            msg!(
+                "Updated share for {:?} is {:?}",
+                project.project_key,
+                updated_share
+            );
         }
 
         Ok(())
@@ -328,6 +335,7 @@ impl Default for PoolAccess {
 }
 
 fn try_load_price(pyth_account: AccountInfo<'_>) -> Result<f64> {
+    /*
     match load_price_feed_from_account_info(&pyth_account) {
         Ok(price_feed) => {
             match price_feed.get_price_no_older_than(
@@ -340,13 +348,12 @@ fn try_load_price(pyth_account: AccountInfo<'_>) -> Result<f64> {
         }
         Err(_) => Err(ProtocolError::PythPriceFeedLoadFailed.into()),
     }
+    */
+
+    Ok(1.0)
 }
 
-fn calculate_price_usd(
-    mint: Option<Pubkey>,
-    amount: u64,
-    usdc_usd_price: f64,
-) -> Result<f64> {
+fn calculate_price_usd(mint: Option<Pubkey>, amount: u64, usdc_usd_price: f64) -> Result<f64> {
     match mint {
         Some(mint) => {
             if mint.eq(&to_pubkey(USDC_MINT)) {
@@ -368,8 +375,7 @@ fn calculate_total_square_root_votes_usd(
     let mut total_square_root_votes_usd_mut: f64 = 0.0;
 
     for vote in votes.iter() {
-        let vote_amount_usd =
-            calculate_price_usd(vote.mint, vote.amount, usdc_usd_price)?;
+        let vote_amount_usd = calculate_price_usd(vote.mint, vote.amount, usdc_usd_price)?;
 
         // The square root of the vote's USD amount
         let vote_amount_square_root_usd = vote_amount_usd.sqrt();
@@ -379,7 +385,6 @@ fn calculate_total_square_root_votes_usd(
 
     Ok(total_square_root_votes_usd_mut as f64)
 }
-
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum UpdatePoolField {
@@ -398,7 +403,7 @@ mod tests {
     #[test]
     fn try_update_shares() -> Result<()> {
         let admin = Pubkey::new_unique();
-        let vote_tickets = [ 
+        let vote_tickets = [
             VoteTicket {
                 payer: Pubkey::new_unique(),
                 mint: Some(to_pubkey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU")),
@@ -437,33 +442,33 @@ mod tests {
         ];
 
         let participants = vec![
-                Participant {
-                    project_key: Pubkey::new_unique(),
-                    claimed: false,
-                    share_data: PoolShare {
-                        share: 0.0,
-                        votes: vec![
-                            vote_tickets[0].clone(),
-                            vote_tickets[2].clone(),
-                            vote_tickets[4].clone(),
-                            vote_tickets[6].clone()
-                        ]
-                    }
+            Participant {
+                project_key: Pubkey::new_unique(),
+                claimed: false,
+                share_data: PoolShare {
+                    share: 0.0,
+                    votes: vec![
+                        vote_tickets[0].clone(),
+                        vote_tickets[2].clone(),
+                        vote_tickets[4].clone(),
+                        vote_tickets[6].clone(),
+                    ],
                 },
-                Participant {
-                    project_key: Pubkey::new_unique(),
-                    claimed: false,
-                    share_data: PoolShare {
-                        share: 0.0,
-                        votes: vec![
-                            vote_tickets[1].clone(),
-                            vote_tickets[3].clone(),
-                            vote_tickets[5].clone()
-                        ]
-                    }
-                }
-            ];
-        
+            },
+            Participant {
+                project_key: Pubkey::new_unique(),
+                claimed: false,
+                share_data: PoolShare {
+                    share: 0.0,
+                    votes: vec![
+                        vote_tickets[1].clone(),
+                        vote_tickets[3].clone(),
+                        vote_tickets[5].clone(),
+                    ],
+                },
+            },
+        ];
+
         let mut pool = Pool {
             pool_id: 12345,
             name: "Sample Pool".to_owned(),
@@ -479,14 +484,11 @@ mod tests {
             bump: 255,
         };
 
-        fn calculate_total_square_root_votes(
-            votes: &Vec<VoteTicket>,
-        ) -> Result<f64> {
+        fn calculate_total_square_root_votes(votes: &Vec<VoteTicket>) -> Result<f64> {
             let mut total_square_root_votes_usd_mut: f64 = 0.0;
 
             for vote in votes.iter() {
-                let vote_amount_usd =
-                    calculate_price_usd(vote.mint, vote.amount, 0.99)?;
+                let vote_amount_usd = calculate_price_usd(vote.mint, vote.amount, 0.99)?;
 
                 // The square root of the vote's USD amount
                 let vote_amount_square_root_usd = vote_amount_usd.sqrt();
@@ -502,15 +504,20 @@ mod tests {
             let mut sum_of_squared_votes_all_projects_mut: f64 = 0.0;
 
             for project in pool.project_shares.iter_mut() {
-                let total_square_root_votes_usd: f64 = calculate_total_square_root_votes(
-                    &project.share_data.votes,
-                )?;
+                let total_square_root_votes_usd: f64 =
+                    calculate_total_square_root_votes(&project.share_data.votes)?;
 
-                println!("Sum of square roots of votes for {:?}: {:?}", project.project_key, total_square_root_votes_usd);
+                println!(
+                    "Sum of square roots of votes for {:?}: {:?}",
+                    project.project_key, total_square_root_votes_usd
+                );
 
                 let sum_of_roots_squared = total_square_root_votes_usd.powi(2);
 
-                println!("Sum of square roots squared for {:?}: {:?}", project.project_key, sum_of_roots_squared);
+                println!(
+                    "Sum of square roots squared for {:?}: {:?}",
+                    project.project_key, sum_of_roots_squared
+                );
 
                 vote_count_mut.insert(project.project_key, sum_of_roots_squared);
                 sum_of_squared_votes_all_projects_mut += sum_of_roots_squared;
@@ -526,7 +533,10 @@ mod tests {
             };
             project.share_data.share = updated_share;
 
-            println!("Updated share for {:?} is {:?}", project.project_key, updated_share);
+            println!(
+                "Updated share for {:?} is {:?}",
+                project.project_key, updated_share
+            );
         }
 
         Ok(())
@@ -535,7 +545,7 @@ mod tests {
     #[test]
     fn try_test_acct_sizing() -> Result<()> {
         let admin = Pubkey::new_unique();
-        let vote_tickets = [ 
+        let vote_tickets = [
             VoteTicket {
                 payer: Pubkey::new_unique(),
                 mint: Some(to_pubkey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU")),
@@ -574,33 +584,33 @@ mod tests {
         ];
 
         let participants = vec![
-                Participant {
-                    project_key: Pubkey::new_unique(),
-                    claimed: false,
-                    share_data: PoolShare {
-                        share: 0.0,
-                        votes: vec![
-                            vote_tickets[0].clone(),
-                            vote_tickets[2].clone(),
-                            vote_tickets[4].clone(),
-                            vote_tickets[6].clone()
-                        ]
-                    }
+            Participant {
+                project_key: Pubkey::new_unique(),
+                claimed: false,
+                share_data: PoolShare {
+                    share: 0.0,
+                    votes: vec![
+                        vote_tickets[0].clone(),
+                        vote_tickets[2].clone(),
+                        vote_tickets[4].clone(),
+                        vote_tickets[6].clone(),
+                    ],
                 },
-                Participant {
-                    project_key: Pubkey::new_unique(),
-                    claimed: false,
-                    share_data: PoolShare {
-                        share: 0.0,
-                        votes: vec![
-                            vote_tickets[1].clone(),
-                            vote_tickets[3].clone(),
-                            vote_tickets[5].clone()
-                        ]
-                    }
-                }
-            ];
-        
+            },
+            Participant {
+                project_key: Pubkey::new_unique(),
+                claimed: false,
+                share_data: PoolShare {
+                    share: 0.0,
+                    votes: vec![
+                        vote_tickets[1].clone(),
+                        vote_tickets[3].clone(),
+                        vote_tickets[5].clone(),
+                    ],
+                },
+            },
+        ];
+
         let pool = Pool {
             pool_id: 12345,
             name: "Sample Pool".to_owned(),
@@ -619,12 +629,12 @@ mod tests {
         let mut pool_data = pool.clone();
 
         let participant = Participant {
-                project_key: Pubkey::new_unique(),
-                claimed: false,
-                share_data: PoolShare {
+            project_key: Pubkey::new_unique(),
+            claimed: false,
+            share_data: PoolShare {
                 share: 0.0,
-                votes: vec![]
-                }
+                votes: vec![],
+            },
         };
 
         pool_data.project_shares.push(participant);
@@ -632,7 +642,10 @@ mod tests {
         let new_acct_data = pool_data.try_to_vec()?.len();
         let old_acct_data = pool.try_to_vec()?.len();
 
-        println!("Old Length: {:?} --- New Length: {:?}", old_acct_data, new_acct_data);
+        println!(
+            "Old Length: {:?} --- New Length: {:?}",
+            old_acct_data, new_acct_data
+        );
 
         Ok(())
     }

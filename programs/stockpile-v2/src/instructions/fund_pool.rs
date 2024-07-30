@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{token, associated_token};
-
+use anchor_spl::token::Token;
+use anchor_spl::associated_token::AssociatedToken;
 use crate::state::pool::*;
 use crate::util::{mint_is_supported, set_and_maybe_realloc, to_pubkey, USDC_DEVNET_MINT};
 

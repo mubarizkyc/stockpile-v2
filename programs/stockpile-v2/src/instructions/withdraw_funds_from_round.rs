@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{token, associated_token};
-
+use anchor_spl::associated_token::AssociatedToken;
 use crate::error::ProtocolError;
+use anchor_spl::token::Token;
 
 use crate::state::pool::*;
 

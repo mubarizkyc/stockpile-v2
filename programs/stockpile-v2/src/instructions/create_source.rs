@@ -14,9 +14,8 @@ pub fn create_source(
             ctx.accounts.payer.key(),
             pool_id,
             amount,
-            *ctx.bumps
-                .get("source")
-                .expect("Failed to derive bump for `source`"),
+            ctx.bumps
+                .source
         )?
     );
     Ok(())

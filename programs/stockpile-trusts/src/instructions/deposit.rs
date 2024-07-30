@@ -1,18 +1,15 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{token, associated_token};
+use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::token::Token;
+use anchor_spl::{associated_token, token};
 use klend::*;
 
 use crate::{error::VaultError, util::KLend};
 
-pub fn deposit(
-    ctx: Context<Deposit>,
-    _project_id: u64,
-    amount: u64
-) -> Result<()> {
-    // Check to make sure the token is supported
-    let cpi_ctx: CpiContext<'_, '_, '_, '_, klend::cpi::accounts::DepositReserveLiquidity<'_>> = CpiContext::new(
-        ctx.accounts.kamino_program.to_account_info(), 
-        cpi::accounts::DepositReserveLiquidity {
+pub fn deposit(ctx: Context<Deposit>, _project_id: u64, amount: u64) -> Result<()> {
+    let cpi_ctx = CpiContext::new(
+        ctx.accounts.kamino_program.to_account_info(),
+        klend::cpi::accounts::DepositReserveLiquidity {
             owner: ctx.accounts.payer.to_account_info(),
             reserve: ctx.accounts.reserve.to_account_info(),
             reserve_collateral_mint: ctx.accounts.mint.to_account_info(),
@@ -21,31 +18,34 @@ pub fn deposit(
             reserve_liquidity_supply: ctx.accounts.reserve_liquidity_supply.to_account_info(),
             user_source_liquidity: ctx.accounts.payer_token_account.to_account_info(),
             user_destination_collateral: ctx.accounts.payer_token_account.to_account_info(),
-            token_program: ctx.accounts.token_program.to_account_info()
+            token_program: ctx.accounts.token_program.to_account_info(),
         },
     );
 
-    cpi::deposit_reserve_liquidity(cpi_ctx, amount)
-        .map_err(|_e| {
-            msg!("Kamino deposit failed.");
-            VaultError::WrongVaultAuthority
-        })?;
+    klend::cpi::deposit_reserve_liquidity(cpi_ctx, amount).map_err(|_e| {
+        msg!("Kamino deposit failed.");
+        VaultError::WrongVaultAuthority
+    })?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
-#[instruction(
-    project_id: u64,
-)]
+#[instruction(project_id: u64)]
 pub struct Deposit<'info> {
-    pub lending_market: AccountInfo<'info>,
-    pub lending_market_authority: AccountInfo<'info>,
+    /// CHECK: Verified by KLend program
+    pub lending_market: UncheckedAccount<'info>,
+    /// CHECK: Verified by KLend program
+    pub lending_market_authority: UncheckedAccount<'info>,
     pub mint: Account<'info, token::Mint>,
-    pub reserve_liquidity_supply: AccountInfo<'info>,
-    pub reserve: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: Verified by KLend program
+    pub reserve_liquidity_supply: UncheckedAccount<'info>,
+    /// CHECK: Verified by KLend program
+    pub reserve: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
+    #[account(mut)]
     pub payer_token_account: Account<'info, token::TokenAccount>,
     pub kamino_program: Program<'info, KLend>,
     pub system_program: Program<'info, System>,
