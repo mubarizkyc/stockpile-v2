@@ -53,6 +53,7 @@ pub fn contribute_with_vote(
             msg!("Gateway token verification failed.");
             ProtocolError::CivicFailure
         })?;
+        
     }
 
     // Add the project to the shares, if it doesn't exist

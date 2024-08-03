@@ -28,17 +28,18 @@ impl Pool {
     pub const SEED_PREFIX: &'static str = "pool";
 
     pub const SPACE: usize = 8
-        + 4                         // u64
-        + 4 + MAX_NAME_LEN          // String
-        + 4                         // u64
-        + 4                         // u64
-        + 4                         // u64
-        + 160                       // Vec<Pubkey> (Max 5)
-        + 32                        // Vec<Participants> (Initial Alloc. for 10 participants w/ 20 votes)
-        + 32                        // Vec<FundingTicket> (Initial Alloc. for 5)
-        + 4                         // Enum (singleton)
-        + 4                         // Enum (singleton)
-        + 1                         // u8
+        + 8                                        // pool_id
+        + 4 + MAX_NAME_LEN                         // name
+        + 8                                        // total_funding
+        + 8                                        // balance
+        + 8                                        // start
+        + 8                                        // end
+        + 4 + 5 * 32                               // admins
+        + 4 + 10 * std::mem::size_of::<Participant>() // project_shares
+        + 4 + 5 * std::mem::size_of::<FundingTicket>() // funders
+        + 1                                        // pool_state
+        + 1                                        // pool_access
+        + 1                                        // bump
         + 2500; // Padding
 
     pub fn new(
