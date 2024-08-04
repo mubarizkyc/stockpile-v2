@@ -52,8 +52,8 @@ security_txt! {
     source_code: "https://github.com/StockpileLabs/stockpile-v2"
 }
 
-//declare_id!("STKUaKniasuqrfer3XNbmrrc578pkL1XACdK8H3YPu8");
-declare_id!("HMynj1Kt2XHEmtfq833taU1Pkkr1fTJDR2SiNq12iW7k");
+//declare_id!("");
+declare_id!("2HW4mtZCCijDrKWRCZNrFQQf43wEZhnCA7EoMf5wTATr");
 #[program]
 pub mod stockpile_v2 {
     use super::*;

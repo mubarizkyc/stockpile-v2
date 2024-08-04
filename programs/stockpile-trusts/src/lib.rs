@@ -8,8 +8,8 @@ pub mod util;
 use crate::state::vault::*;
 pub use instructions::*;
 
-//declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
-declare_id!("Hs3AQUcQQmxJLR8SnLEkknqLNdCk2LGh38NGQacEvT7y");
+//declare_id!("");
+declare_id!("DHdGHuLQ2NK7nCDUCVkMa9fKkEG8zJQdiB3H8Dn4ngj");
 #[program]
 pub mod stockpile_trusts {
     use super::*;
